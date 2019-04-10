@@ -6,6 +6,7 @@ from flask_session import Session  # 导入Session 保存session
 from config import config
 from flask_sqlalchemy import SQLAlchemy
 from infor.modules.index import index_blu
+redis_store = None
 
 db = SQLAlchemy()
 
@@ -27,10 +28,12 @@ def creat_app(config_name):
     db.init_app(app)
     global redis_store
     redis_store = redis.StrictRedis(host=config[config_name].REDIS_HOST, port=config[config_name].REDIS_PORT)
-    CSRFProtect(app)  # 开启对应用程序的保护，CSRFProtect只做验证工作，cookie中的 csrf_token 和表单中的 csrf_token 需要我们自己实现
+    # CSRFProtect(app)  # 开启对应用程序的保护，CSRFProtect只做验证工作，cookie中的 csrf_token 和表单中的 csrf_token 需要我们自己实现
     Session(app)
     setup_log(config_name)
     app.register_blueprint(index_blu)
+    from infor.modules.passport import passport_blu
+    app.register_blueprint(passport_blu)
     return app
 
 
