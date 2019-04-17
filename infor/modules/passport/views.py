@@ -57,12 +57,24 @@ def login():
         return jsonify(error=RET.PARAMERR, errmsg='没有这个用户SB！！！！')
     if not user.check_passowrd(password):
         return jsonify(error=RET.PARAMERR, errmsg='密码错了SB！！')
+    session["user_id"] = user.id
+    session["nick_name"] = user.nick_name
+    session["mobile"] = user.mobile
     user.last_login = datetime.datetime.now()
     return jsonify(error=RET.OK, errmsg="OK")
 # 校验参数
 # 校验短信校验密码
 # 保存用户登录状态
 # 返回结果
+
+
+@passport_blu.route('/logout', methods=['POST'])
+def logout():
+    session.pop('user_id')
+    session.pop('nick_name')
+    session.pop('mobile')
+    return jsonify(error=RET.OK, errmsg='OK!')
+
 
 @passport_blu.route('/register', methods=['POST'])
 def register():

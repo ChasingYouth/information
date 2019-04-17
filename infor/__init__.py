@@ -6,6 +6,10 @@ from flask_session import Session  # 导入Session 保存session
 from config import config
 from flask_sqlalchemy import SQLAlchemy
 from infor.modules.index import index_blu
+from flask_wtf.csrf import generate_csrf
+
+from infor.utils.common import do_index_class
+
 redis_store = None
 
 db = SQLAlchemy()
@@ -22,18 +26,31 @@ def setup_log(config_name):
     # 为全局的日志工具对象（flask app使用的）添加日志记录器
     logging.getLogger().addHandler(file_log_handler)
 
+
 def creat_app(config_name):
     app = Flask(__name__)
+    app.add_template_filter(do_index_class, 'index_class')
+
     app.config.from_object(config[config_name])
     db.init_app(app)
     global redis_store
     redis_store = redis.StrictRedis(host=config[config_name].REDIS_HOST, port=config[config_name].REDIS_PORT)
-    # CSRFProtect(app)  # 开启对应用程序的保护，CSRFProtect只做验证工作，cookie中的 csrf_token 和表单中的 csrf_token 需要我们自己实现
+    CSRFProtect(app)  # 开启对应用程序的保护，CSRFProtect只做验证工作，cookie中的 csrf_token 和表单中的 csrf_token 需要我们自己实现
     Session(app)
     setup_log(config_name)
     app.register_blueprint(index_blu)
+# 注册蓝图
     from infor.modules.passport import passport_blu
     app.register_blueprint(passport_blu)
+    from infor.modules.news import news_blu
+    app.register_blueprint(news_blu)
+
+    @app.after_request
+    def after_request(response):
+        csrf_token = generate_csrf()
+        response.set_cookie('csrf_token', csrf_token)
+        return response
     return app
+
 
 
